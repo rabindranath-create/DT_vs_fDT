@@ -734,3 +734,150 @@ DT_vs_fDT_Alg <- function(obs_info, dt){
 
 
 
+
+
+
+
+#############
+#DT only for save
+###########
+
+DT_Alg_save <- function(obs_info){
+  
+  
+  output_Ginfo <- Update_graph_intersect_DT(G_original, x, y, obs_info, r)
+  
+  G_ed <- output_Ginfo$G_info
+  
+  Int_info <- output_Ginfo$Int_info
+  
+  ##from to cost
+  df_edge_ed <- as_data_frame(G_ed, what="edges")
+  n_rows <- nrow(df_edge_ed)
+  
+  list_of <- matrix(nrow = n_rows, ncol = 0)
+  
+  explored_node <- c(s)
+  
+
+  ##############
+  #Test before while loop 
+  ##############
+  
+  #############
+  #End
+  #############
+  
+  
+  
+  
+  #############
+  #while loop 
+  #############
+  
+  
+  while(!(t %in% explored_node)){
+    
+    df_edge_ed$Score <- Inf
+    
+    ########
+    #DT finding optimal action 
+    ########
+    
+    #####find which is boundary edge 
+    is_boundary <- (df_edge_ed$from %in% explored_node) != (df_edge_ed$to %in% explored_node)
+    df_edge_ed$outside_vertex <- NA_integer_
+    
+    #  vertex that is NOT in explored_node
+    df_edge_ed$outside_vertex[is_boundary] <- ifelse(
+      df_edge_ed$from[is_boundary] %in% explored_node,
+      df_edge_ed$to[is_boundary],   # from in explored_node → pick to
+      df_edge_ed$from[is_boundary]  # from not in explored_node → pick from
+    )
+    
+    boundary_edges <- which(!is.na(df_edge_ed$outside_vertex))
+    
+    all_distances_to_t <- distances(
+      G_ed, V(G_ed),    # all nodes as source
+      which(vertex.attributes(G_ed)$name==as.character(t)),
+      weights = df_edge_ed$Cost,
+      algorithm = "dijkstra"
+    )
+    
+    df_edge_ed$Score[boundary_edges] <-
+      as.numeric(all_distances_to_t[ as.numeric(df_edge_ed$outside_vertex[boundary_edges]) ]) +
+      df_edge_ed$Cost[boundary_edges]
+    
+    
+    action_edge <- which.min(df_edge_ed[,4])
+    
+    explored_node <- c(explored_node, df_edge_ed$outside_vertex[action_edge])
+    
+    ########
+    #END: DT finding optimal action 
+    ########
+    
+    #############################
+    
+    
+    obs_ind_temp <- which(Int_info[action_edge,]==1)
+    
+    if(length(obs_ind_temp) !=0){
+      if (length(obs_ind_temp)==1){
+        # 
+        if(obs_info$status[obs_ind_temp]==1){
+          # adjust based on true obstalce
+          df_edge_ed[which(Int_info[,obs_ind_temp]==1),3] <- Inf
+        } else{
+          dt_nonfixed <- Dist_Euclidean(as.numeric(obs_info[obs_ind_temp,1:2]),c(50,1))
+          # adjust based on false obstacle
+          df_edge_ed[which(Int_info[,obs_ind_temp]==1),3] <- pmax(0, df_edge_ed[which(Int_info[,obs_ind_temp]==1),3]-
+                                                                    0.5*(obs_info[obs_ind_temp,3]+(dt_nonfixed/(1-obs_info[obs_ind_temp,4]))^(-log(1-obs_info[obs_ind_temp,4]))))
+          Int_info[which(Int_info[,obs_ind_temp]==1),obs_ind_temp] <- 0 
+        }
+      } else{
+        dist_temp <- rep(0,length(obs_ind_temp))
+        for(i in 1:length(obs_ind_temp)){
+          dist_temp[i] <- Dist_Euclidean(as.numeric(vertice_list[as.numeric(df_edge_ed[action_edge, 1]), 1:2]),obs_info[obs_ind_temp[i],1:2])
+        }
+        obs_ind_temp2 <- obs_ind_temp[which.min(dist_temp)]
+        # add cost of disambiguation
+        
+        if (obs_info$status[obs_ind_temp2]==1){
+          # true obstacle
+          df_edge_ed[which(Int_info[,obs_ind_temp2]==1),3] <- Inf
+        } else{
+          dt_nonfixed <- Dist_Euclidean(as.numeric(obs_info[obs_ind_temp2,1:2]),c(50,1))
+          # false obstacle
+          df_edge_ed[which(Int_info[,obs_ind_temp2]==1),3] <- pmax(0, df_edge_ed[which(Int_info[,obs_ind_temp2]==1),3]-
+                                                                     0.5*(obs_info[obs_ind_temp2,3]+(dt_nonfixed/(1-obs_info[obs_ind_temp2,4]))^(-log(1-obs_info[obs_ind_temp2,4]))))
+          Int_info[which(Int_info[,obs_ind_temp2]==1),obs_ind_temp2] <- 0
+        }
+      }
+    }
+    ###############################
+    
+    
+    
+    list_of <- cbind(list_of, df_edge_ed[, 4])
+  
+    
+    #######
+    #Whether the edge cross the boudary of the obstacle 
+    #######
+    
+    
+    
+    
+    #######
+    #End: Whether the edge cross the boudary of the obstacle 
+    #######
+    
+    
+  }
+  
+  return(list_of)
+}
+
+
+
