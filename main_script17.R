@@ -9,7 +9,7 @@ cat("Created directory:", output_dir, "\n")
 source("DTvsfDT.R")
 
 
-obs_gen_para <- read.csv("patter_new/obstacle_17.csv")
+obs_gen_para <- read.csv("pattern_new/obstacle_17.csv")
 
 
 the_result <- DT_Alg_save(obs_gen_para)
