@@ -2,7 +2,7 @@
 
 cat("Working directory:", getwd(), "\n")
 
-output_dir <- file.path(getwd(), "outputs/script1")
+output_dir <- file.path(getwd(), "outputs/script10")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 cat("Created directory:", output_dir, "\n")
 
@@ -16,5 +16,5 @@ dt <- 10
 the_result <- DT_vs_fDT_Alg(obs_gen_para, dt)
 
 
-file_name <- file.path(output_dir, paste0("results_part12.rds"))
+file_name <- file.path(output_dir, paste0("results_part10.rds"))
 saveRDS(the_result, file = file_name)
